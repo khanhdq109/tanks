@@ -13,12 +13,19 @@ namespace Complete
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
         public GameObject m_PlayerTankPrefab;       // Reference to the prefab the player will control.
         public Transform m_PlayerSpawnPoint;        // Spawn point for the player tank.
-        public GameObject m_EnemyTankPrefab;        // Reference to the prefab the enemies will control.
-        public Transform[] m_EnemySpawnPoints;      // Spawn points for enemy tanks.
+        public GameObject m_SmallEnemyPrefab;       // Reference to the prefab the small enemies will control.
+        public GameObject m_MediumEnemyPrefab;      // Reference to the prefab the medium enemies will control.
+        public GameObject m_BossPrefab;             // Reference to the prefab the boss will control.
+        public Transform[] m_SpawnPointsSmall;      // Spawn points for small enemy tanks.
+        public Transform[] m_SpawnPointsMedium;     // Spawn points for medium enemy tanks.
+        public Transform[] m_SpawnPointsBoss;       // Spawn points for boss.
 
+        private string m_Phase = "small";           // Current phase of the game - small, medium, boss
         private GameObject m_PlayerTank;            // Instance of the player's tank.
         private TankHealth m_PlayerHealth;          // Reference to the player's TankHealth component.
-        private GameObject[] m_EnemyTanks;          // Instances of the enemy tanks.
+        private GameObject[] m_SmallEnemies;        // Instances of the small enemy tanks.
+        private GameObject[] m_MediumEnemies;       // Instances of the medium enemy tanks.
+        private GameObject[] m_Boss;                // Instances of the boss.
         private WaitForSeconds m_StartWait;         // Delay before starting a round.
         private WaitForSeconds m_EndWait;           // Delay before ending a round.
 
@@ -28,9 +35,9 @@ namespace Complete
             m_StartWait = new WaitForSeconds(m_StartDelay);
             m_EndWait = new WaitForSeconds(m_EndDelay);
 
-            // Spawn the player and enemy tanks.
+            // Spawn the player and small enemy tanks.
             SpawnPlayerTank();
-            SpawnEnemyTanks();
+            SpawnSmallEnemies();
 
             // Set the camera targets.
             SetCameraTargets();
@@ -44,76 +51,131 @@ namespace Complete
             m_PlayerTank = Instantiate(m_PlayerTankPrefab, m_PlayerSpawnPoint.position, m_PlayerSpawnPoint.rotation);
             m_PlayerHealth = m_PlayerTank.GetComponent<TankHealth>();
 
-            // Set the player's tank color to green.
-            SetTankColor(m_PlayerTank, new Color(0f, 0.7f, 0f));
+            SetTankColor(m_PlayerTank, new Color(0f, 0.6f, 0f));
         }
 
-        private void SpawnEnemyTanks()
+        private void SpawnSmallEnemies()
         {
-            m_EnemyTanks = new GameObject[m_EnemySpawnPoints.Length];
+            m_SmallEnemies = new GameObject[m_SpawnPointsSmall.Length];
 
-            for (int i = 0; i < m_EnemySpawnPoints.Length; i++)
+            for (int i = 0; i < m_SpawnPointsSmall.Length; i++)
             {
-                m_EnemyTanks[i] = Instantiate(m_EnemyTankPrefab, m_EnemySpawnPoints[i].position, m_EnemySpawnPoints[i].rotation);
+                m_SmallEnemies[i] = Instantiate(m_SmallEnemyPrefab, m_SpawnPointsSmall[i].position, m_SpawnPointsSmall[i].rotation);
+                SetTankColor(m_SmallEnemies[i], new Color(28.0f / 255.0f, 102.0f / 255.0f, 207.0f / 255.0f));
+            }
+        }
 
-                // Set the enemy tank color to red.
-                SetTankColor(m_EnemyTanks[i], new Color(0.8f, 0f, 0f));
+        private void SpawnMediumEnemies()
+        {
+            m_MediumEnemies = new GameObject[m_SpawnPointsMedium.Length];
+
+            for (int i = 0; i < m_SpawnPointsMedium.Length; i++)
+            {
+                m_MediumEnemies[i] = Instantiate(m_MediumEnemyPrefab, m_SpawnPointsMedium[i].position, m_SpawnPointsMedium[i].rotation);
+                SetTankColor(m_MediumEnemies[i], new Color(176.0f / 255.0f, 173.0f / 255.0f, 8.0f / 255.0f));
+            }
+        }
+
+        private void SpawnBoss()
+        {
+            m_Boss = new GameObject[m_SpawnPointsBoss.Length];
+
+            for (int i = 0; i < m_SpawnPointsBoss.Length; i++)
+            {
+                m_Boss[i] = Instantiate(m_BossPrefab, m_SpawnPointsBoss[i].position, m_SpawnPointsBoss[i].rotation);
+                SetTankColor(m_Boss[i], new Color(213.0f / 255.0f, 15.0f / 255.0f, 15.0f / 255.0f));
             }
         }
 
         private void SetTankColor(GameObject tank, Color color)
         {
-            // Assuming the tank has a specific tag or name for its body parts.
-            // Filter only renderers attached to the tank's body and not its trails or other effects.
             Renderer[] renderers = tank.GetComponentsInChildren<Renderer>();
 
             foreach (Renderer renderer in renderers)
             {
-                // Skip renderers for trails or effects by checking names, tags, or specific conditions.
                 if (renderer.gameObject.CompareTag("Trail"))
                     continue;
 
-                // Apply the color to the material.
                 renderer.material.color = color;
             }
         }
 
         private void SetCameraTargets()
         {
+            // Get the current set of enemy tanks based on the current phase.
+            GameObject[] m_EnemyTanks = GetCurrentEnemies();
+
+            // Create an array of targets that includes the player tank.
             Transform[] targets = new Transform[m_EnemyTanks.Length + 1];
 
-            // Add the player tank as a target.
+            // Set the player tank as the first target.
             targets[0] = m_PlayerTank.transform;
 
-            // Add all enemy tanks as targets.
+            // Set each enemy tank as a target.
             for (int i = 0; i < m_EnemyTanks.Length; i++)
             {
                 targets[i + 1] = m_EnemyTanks[i].transform;
             }
 
+            // Assign the updated targets to the camera.
             m_CameraControl.m_Targets = targets;
+        }
+
+        private GameObject[] GetCurrentEnemies()
+        {
+            if (m_Phase == "small")
+            {
+                return m_SmallEnemies;
+            }
+            else if (m_Phase == "medium")
+            {
+                return m_MediumEnemies;
+            }
+            else if (m_Phase == "boss")
+            {
+                return m_Boss;
+            }
+            return new GameObject[0];
         }
 
         private IEnumerator GameLoop()
         {
-            yield return StartCoroutine(RoundStarting());
-            yield return StartCoroutine(RoundPlaying());
-            yield return StartCoroutine(RoundEnding());
+            while (true)
+            {
+                yield return StartCoroutine(RoundStarting());
+                yield return StartCoroutine(RoundPlaying());
+                yield return StartCoroutine(RoundEnding());
 
-            if (!m_PlayerHealth.gameObject.activeSelf)
-            {
-                // Player lost; reload the scene.
-                SceneManager.LoadScene(0);
-            }
-            else if (AllEnemiesDefeated())
-            {
-                // Player won; reload the scene.
-                SceneManager.LoadScene(0);
-            }
-            else
-            {
-                // Restart the game loop.
-                StartCoroutine(GameLoop());
+                if (!m_PlayerHealth.gameObject.activeSelf)
+                {
+                    m_MessageText.text = "YOU LOSE!";
+                    yield return m_EndWait;
+                    SceneManager.LoadScene(0); // Reload the scene
+                    yield break;
+                }
+                else if (AllEnemiesDefeated())
+                {
+                    if (m_Phase == "small")
+                    {
+                        m_Phase = "medium";
+                        SpawnMediumEnemies();
+                        SetCameraTargets();
+                        
+                    }
+                    else if (m_Phase == "medium")
+                    {
+                        m_Phase = "boss";
+                        SpawnBoss();
+                        SetCameraTargets();
+                    }
+                    else if (m_Phase == "boss")
+                    {
+                        m_MessageText.text = "YOU WIN!";
+                        yield return m_EndWait;
+                        SceneManager.LoadScene(0); // Reload the scene or exit
+                        yield break;
+                    }
+                }
             }
         }
 
@@ -147,7 +209,18 @@ namespace Complete
             }
             else if (AllEnemiesDefeated())
             {
-                m_MessageText.text = "YOU WIN!";
+                if (m_Phase == "small")
+                {
+                    m_MessageText.text = "SMALL PHASE COMPLETED!";
+                }
+                else if (m_Phase == "medium")
+                {
+                    m_MessageText.text = "MEDIUM PHASE COMPLETED!";
+                }
+                else if (m_Phase == "boss")
+                {
+                    m_MessageText.text = "YOU WIN!";
+                }
             }
             else
             {
@@ -159,6 +232,8 @@ namespace Complete
 
         private bool AllEnemiesDefeated()
         {
+            GameObject[] m_EnemyTanks = GetCurrentEnemies();
+
             foreach (var enemy in m_EnemyTanks)
             {
                 if (enemy.activeSelf)
@@ -174,28 +249,65 @@ namespace Complete
         {
             m_PlayerTank.transform.position = m_PlayerSpawnPoint.position;
             m_PlayerTank.transform.rotation = m_PlayerSpawnPoint.rotation;
-            m_PlayerTank.SetActive(true);
+
+            TankMovement playerTankMovement = m_PlayerTank.GetComponent<TankMovement>();
+            if (playerTankMovement != null) playerTankMovement.enabled = true;
+
+            TankShooting playerTankShooting = m_PlayerTank.GetComponent<TankShooting>();
+            if (playerTankShooting != null) playerTankShooting.enabled = true;
         }
 
         private void ResetEnemyTanks()
         {
-            for (int i = 0; i < m_EnemyTanks.Length; i++)
+            GameObject[] m_EnemyTanks = GetCurrentEnemies();
+
+            foreach (var enemy in m_EnemyTanks)
             {
-                m_EnemyTanks[i].transform.position = m_EnemySpawnPoints[i].position;
-                m_EnemyTanks[i].transform.rotation = m_EnemySpawnPoints[i].rotation;
-                m_EnemyTanks[i].SetActive(true);
+                enemy.transform.position = GetEnemySpawnPoint(enemy).position;
+                enemy.transform.rotation = GetEnemySpawnPoint(enemy).rotation;
+
+                TankMovement enemyTankMovement = enemy.GetComponent<TankMovement>();
+                if (enemyTankMovement != null) enemyTankMovement.enabled = true;
+
+                TankShooting enemyTankShooting = enemy.GetComponent<TankShooting>();
+                if (enemyTankShooting != null) enemyTankShooting.enabled = true;
             }
+        }
+
+        private Transform GetEnemySpawnPoint(GameObject enemy)
+        {
+            if (m_Phase == "small")
+            {
+                return m_SpawnPointsSmall[System.Array.IndexOf(m_SmallEnemies, enemy)];
+            }
+            else if (m_Phase == "medium")
+            {
+                return m_SpawnPointsMedium[System.Array.IndexOf(m_MediumEnemies, enemy)];
+            }
+            else if (m_Phase == "boss")
+            {
+                return m_SpawnPointsBoss[System.Array.IndexOf(m_Boss, enemy)];
+            }
+            return null;
         }
 
         private void DisableTankControl()
         {
-            m_PlayerTank.GetComponent<TankMovement>().enabled = false;
-            m_PlayerTank.GetComponent<TankShooting>().enabled = false;
+            // Disable control for the player tank and all enemy tanks.
+            TankMovement playerTankMovement = m_PlayerTank.GetComponent<TankMovement>();
+            if (playerTankMovement != null) playerTankMovement.enabled = false;
 
+            TankShooting playerTankShooting = m_PlayerTank.GetComponent<TankShooting>();
+            if (playerTankShooting != null) playerTankShooting.enabled = false;
+
+            GameObject[] m_EnemyTanks = GetCurrentEnemies();
             foreach (var enemy in m_EnemyTanks)
             {
-                enemy.GetComponent<TankMovement>().enabled = false;
-                enemy.GetComponent<TankShooting>().enabled = false;
+                TankMovement enemyTankMovement = enemy.GetComponent<TankMovement>();
+                if (enemyTankMovement != null) enemyTankMovement.enabled = false;
+
+                TankShooting enemyTankShooting = enemy.GetComponent<TankShooting>();
+                if (enemyTankShooting != null) enemyTankShooting.enabled = false;
             }
         }
     }
