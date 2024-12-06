@@ -19,6 +19,7 @@ namespace Complete
         public Transform[] m_SpawnPointsSmall;      // Spawn points for small enemy tanks.
         public Transform[] m_SpawnPointsMedium;     // Spawn points for medium enemy tanks.
         public Transform[] m_SpawnPointsBoss;       // Spawn points for boss.
+        public GameObject m_HealthItemPrefab;       // Item that recovers and increases max health
 
         private string m_Phase = "small";           // Current phase of the game - small, medium, boss
         private GameObject m_PlayerTank;            // Instance of the player's tank.
@@ -26,6 +27,8 @@ namespace Complete
         private GameObject[] m_SmallEnemies;        // Instances of the small enemy tanks.
         private GameObject[] m_MediumEnemies;       // Instances of the medium enemy tanks.
         private GameObject[] m_Boss;                // Instances of the boss.
+        private float m_HealthIncreaseAmount = 50f; // Amount to increase max health
+        private float m_HealthRestoreAmount = 30f;  // Amount to restore current health
         private WaitForSeconds m_StartWait;         // Delay before starting a round.
         private WaitForSeconds m_EndWait;           // Delay before ending a round.
 
@@ -187,6 +190,9 @@ namespace Complete
 
             m_MessageText.text = "GET READY!";
             yield return m_StartWait;
+
+            // Spawn health item randomly in the current phase
+            SpawnHealthItem();
         }
 
         private IEnumerator RoundPlaying()
@@ -195,6 +201,8 @@ namespace Complete
 
             while (m_PlayerHealth.gameObject.activeSelf && !AllEnemiesDefeated())
             {
+                // Check for item pickups during gameplay
+                CheckForItemPickup();
                 yield return null;
             }
         }
@@ -211,11 +219,11 @@ namespace Complete
             {
                 if (m_Phase == "small")
                 {
-                    m_MessageText.text = "SMALL PHASE COMPLETED!";
+                    m_MessageText.text = "PHASE 1 COMPLETED!";
                 }
                 else if (m_Phase == "medium")
                 {
-                    m_MessageText.text = "MEDIUM PHASE COMPLETED!";
+                    m_MessageText.text = "PHASE 2 COMPLETED";
                 }
                 else if (m_Phase == "boss")
                 {
@@ -309,6 +317,36 @@ namespace Complete
                 TankShooting enemyTankShooting = enemy.GetComponent<TankShooting>();
                 if (enemyTankShooting != null) enemyTankShooting.enabled = false;
             }
+        }
+
+        private void SpawnHealthItem()
+        {
+            Vector3 spawnPosition = m_PlayerTank.transform.position + new Vector3(Random.Range(-10f, 10f), 0f, Random.Range(-10f, 10f));
+            Instantiate(m_HealthItemPrefab, spawnPosition, Quaternion.identity);
+        }
+
+        private void CheckForItemPickup()
+        {
+            Collider[] hitColliders = Physics.OverlapSphere(m_PlayerTank.transform.position, 2f); // Check within range of 2 units
+
+            foreach (Collider hitCollider in hitColliders)
+            {
+                if (hitCollider.CompareTag("Item"))
+                {
+                    OnItemPickedUp(hitCollider.gameObject);
+                }
+            }
+        }
+
+        private void OnItemPickedUp(GameObject item)
+        {
+            if (item.CompareTag("Item"))
+            {
+                m_PlayerHealth.IncreaseMaxHealth(m_HealthIncreaseAmount);
+                m_PlayerHealth.RestoreHealth(m_HealthRestoreAmount);
+            }
+
+            Destroy(item);
         }
     }
 }

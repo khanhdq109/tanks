@@ -81,5 +81,18 @@ namespace Complete
             // Turn the tank off.
             gameObject.SetActive(false);
         }
+
+        public void IncreaseMaxHealth(float amount)
+        {
+            m_StartingHealth += amount;
+            m_CurrentHealth = m_StartingHealth;  // Set current health to the new maximum
+            SetHealthUI();  // Update health UI
+        }
+
+        public void RestoreHealth(float amount)
+        {
+            m_CurrentHealth = Mathf.Min(m_CurrentHealth + amount, m_StartingHealth); // Ensure health doesn't exceed the max
+            SetHealthUI();  // Update health UI
+        }
     }
 }
