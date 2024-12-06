@@ -43,6 +43,9 @@ namespace Complete
         {
             m_PlayerTank = Instantiate(m_PlayerTankPrefab, m_PlayerSpawnPoint.position, m_PlayerSpawnPoint.rotation);
             m_PlayerHealth = m_PlayerTank.GetComponent<TankHealth>();
+
+            // Set the player's tank color to green.
+            SetTankColor(m_PlayerTank, new Color(0f, 0.7f, 0f));
         }
 
         private void SpawnEnemyTanks()
@@ -52,6 +55,26 @@ namespace Complete
             for (int i = 0; i < m_EnemySpawnPoints.Length; i++)
             {
                 m_EnemyTanks[i] = Instantiate(m_EnemyTankPrefab, m_EnemySpawnPoints[i].position, m_EnemySpawnPoints[i].rotation);
+
+                // Set the enemy tank color to red.
+                SetTankColor(m_EnemyTanks[i], new Color(0.8f, 0f, 0f));
+            }
+        }
+
+        private void SetTankColor(GameObject tank, Color color)
+        {
+            // Assuming the tank has a specific tag or name for its body parts.
+            // Filter only renderers attached to the tank's body and not its trails or other effects.
+            Renderer[] renderers = tank.GetComponentsInChildren<Renderer>();
+
+            foreach (Renderer renderer in renderers)
+            {
+                // Skip renderers for trails or effects by checking names, tags, or specific conditions.
+                if (renderer.gameObject.CompareTag("Trail"))
+                    continue;
+
+                // Apply the color to the material.
+                renderer.material.color = color;
             }
         }
 
