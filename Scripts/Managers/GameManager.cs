@@ -55,6 +55,7 @@ namespace Complete
             m_PlayerHealth = m_PlayerTank.GetComponent<TankHealth>();
 
             SetTankColor(m_PlayerTank, new Color(0f, 0.6f, 0f));
+            SetTankHeath(m_PlayerTank, 200f);
         }
 
         private void SpawnSmallEnemies()
@@ -65,6 +66,8 @@ namespace Complete
             {
                 m_SmallEnemies[i] = Instantiate(m_SmallEnemyPrefab, m_SpawnPointsSmall[i].position, m_SpawnPointsSmall[i].rotation);
                 SetTankColor(m_SmallEnemies[i], new Color(28.0f / 255.0f, 102.0f / 255.0f, 207.0f / 255.0f));
+                SetTankHeath(m_SmallEnemies[i], 50f);
+                SetTankStat(m_SmallEnemies[i], 5f, 2f);
             }
         }
 
@@ -76,6 +79,8 @@ namespace Complete
             {
                 m_MediumEnemies[i] = Instantiate(m_MediumEnemyPrefab, m_SpawnPointsMedium[i].position, m_SpawnPointsMedium[i].rotation);
                 SetTankColor(m_MediumEnemies[i], new Color(176.0f / 255.0f, 173.0f / 255.0f, 8.0f / 255.0f));
+                SetTankHeath(m_MediumEnemies[i], 100f);
+                SetTankStat(m_MediumEnemies[i], 7f, 1.5f);
             }
         }
 
@@ -87,6 +92,8 @@ namespace Complete
             {
                 m_Boss[i] = Instantiate(m_BossPrefab, m_SpawnPointsBoss[i].position, m_SpawnPointsBoss[i].rotation);
                 SetTankColor(m_Boss[i], new Color(213.0f / 255.0f, 15.0f / 255.0f, 15.0f / 255.0f));
+                SetTankHeath(m_Boss[i], 500f);
+                SetTankStat(m_Boss[i], 10f, 1f);
             }
         }
 
@@ -101,6 +108,19 @@ namespace Complete
 
                 renderer.material.color = color;
             }
+        }
+
+        private void SetTankHeath(GameObject tank, float health)
+        {
+            TankHealth tankHealth = tank.GetComponent<TankHealth>();
+            tankHealth.IncreaseMaxHealth(health);
+        }
+
+        private void SetTankStat(GameObject tank, float speed, float shootingInterval)
+        {
+            TankAI tankAI = tank.GetComponent<TankAI>();
+            tankAI.moveSpeed = speed;
+            tankAI.shootingInterval = shootingInterval;
         }
 
         private void SetCameraTargets()
@@ -321,7 +341,7 @@ namespace Complete
 
         private void SpawnHealthItem()
         {
-            Vector3 spawnPosition = m_PlayerTank.transform.position + new Vector3(Random.Range(-10f, 10f), 0f, Random.Range(-10f, 10f));
+            Vector3 spawnPosition = m_PlayerTank.transform.position + new Vector3(Random.Range(-10f, 10f), 0.5f, Random.Range(-10f, 10f));
             Instantiate(m_HealthItemPrefab, spawnPosition, Quaternion.identity);
         }
 
