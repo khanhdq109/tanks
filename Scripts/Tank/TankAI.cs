@@ -3,6 +3,7 @@ using UnityEngine.AI;
 
 public class TankAI : MonoBehaviour
 {
+    public float maxShootDistance = 100f;
     public float maxDistance = 20f;
     public float minDistance = 10f;
     public float shootingInterval = 2f;
@@ -111,7 +112,7 @@ public class TankAI : MonoBehaviour
 
         RaycastHit hit;
         Vector3 direction = (targetTank.position - transform.position).normalized;
-        if (Physics.Raycast(transform.position, direction, out hit, maxDistance))
+        if (Physics.Raycast(transform.position, direction, out hit, maxShootDistance))
         {
             if (hit.transform == targetTank)
             {
@@ -131,7 +132,7 @@ public class TankAI : MonoBehaviour
             Rigidbody shellInstance = Instantiate(shellPrefab, fireTransform.position, fireTransform.rotation) as Rigidbody;
 
             // Set the shell's linearVelocity to the launch force in the fire position's forward direction.
-            shellInstance.linearVelocity = fireTransform.forward * distance;
+            shellInstance.linearVelocity = fireTransform.forward * distance * 0.8f;
 
             // Play the shooting audio.
             shootingAudio.clip = fireClip;
